@@ -1,102 +1,120 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  View,
+  ScrollView,
+  useColorScheme,
+} from 'react-native';
+import {
+  Provider as PaperProvider,
+  Text,
+  Button,
+  Switch,
+  DefaultTheme,
+  MD3DarkTheme as DarkTheme,
+} from 'react-native-paper';
+import Icon from 'react-native-vector-icons/FontAwesome5';
 
-const CalculatorScreen = () => {
-  const [input, setInput] = useState('');
+const buttons = [
+  ['C', '(', ')', 'X'],
+  ['7', '8', '9', '÷'],
+  ['4', '5', '6', '×'],
+  ['1', '2', '3', '−'],
+  ['.', '0', '=', '+'],
+];
+
+export default function CalculatorScreen() {
+  const systemTheme = useColorScheme();
+  const [darkMode, setDarkMode] = useState(systemTheme === 'dark');
+  const [expression, setExpression] = useState('');
   const [result, setResult] = useState('');
 
-  const handlePress = (value: string) => {
-    if (value === 'C') {
-      setInput('');
+  const handleInput = (val: string) => {
+    if (val === 'C') {
+      setExpression('');
       setResult('');
-    } else if (value === '=') {
+    } else if (val === '⌫') {
+      setExpression(expression.slice(0, -1));
+    } else if (val === '=') {
       try {
-        setResult(eval(input).toString());
-      } catch (error) {
-        setResult('Error');
+        const sanitized = expression
+          .replace(/×/g, '*')
+          .replace(/÷/g, '/')
+          .replace(/−/g, '-');
+        const evalResult = eval(sanitized);
+        setResult(evalResult.toString());
+      } catch (e) {
+        setResult('0');
       }
     } else {
-      setInput(input + value);
+      setExpression((prev) => prev + val);
     }
   };
 
-  const buttons = [
-    ['C', '(', ')', '/'],
-    ['7', '8', '9', '*'],
-    ['4', '5', '6', '-'],
-    ['1', '2', '3', '+'],
-    ['0', '.', '=', ''],
-  ];
+  const theme = darkMode ? DarkTheme : DefaultTheme;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.display}>
-        <Text style={styles.input}>{input}</Text>
-        <Text style={styles.result}>{result}</Text>
-      </View>
-      <View style={styles.buttons}>
-        {buttons.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            {row.map((button, buttonIndex) => (
-              <TouchableOpacity
-                key={buttonIndex}
-                style={styles.button}
-                onPress={() => handlePress(button)}
-              >
-                <Text style={styles.buttonText}>{button}</Text>
-              </TouchableOpacity>
+    <PaperProvider theme={theme}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: theme.colors.background, padding: 16 }}>
+        <View style={{ flex: 1, justifyContent: 'space-between' }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
+              <Text style={{ color: theme.colors.onSurface }}>
+                {darkMode ? 'Dark' : 'Light'} Theme
+              </Text>
+              <Switch value={darkMode} onValueChange={setDarkMode} />
+            </View>
+          <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+            <Text style={{ fontSize: 24, textAlign: 'right', color: theme.colors.onSurface }}>
+              {expression}
+            </Text>
+            <Text style={{ fontSize: 36, fontWeight: 'bold', textAlign: 'right', color: theme.colors.onSurface, marginTop: 10 }}>
+              {result}
+            </Text>
+            
+          </View>
+
+          <View style={{ flex: 2, justifyContent: 'flex-end' }}>
+            {buttons.map((row, rowIndex) => (
+              <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                {row.map((item) => (
+                  <Button
+                    key={item}
+                    mode="contained"
+                    onPress={() => handleInput(item)}
+                    style={{
+                      flex: 1,
+                      margin: 5,
+                      borderRadius: 50,
+                      backgroundColor:
+                        item === 'C'
+                          ? '#fbc531'
+                          : item === '='
+                          ? '#8e44ad'
+                          : ['÷', '×', '−', '+'].includes(item)
+                          ? '#9c88ff'
+                          : darkMode
+                          ? '#2f3640'
+                          : '#ecf0f1',
+                    }}
+                    labelStyle={{
+                      fontSize: 20,
+                      fontWeight: 'bold',
+                      color:
+                        item === '=' || item === 'C' || ['÷', '×', '−', '+'].includes(item)
+                          ? '#fff'
+                          : darkMode
+                          ? '#dcdde1'
+                          : '#2f3640',
+                    }}
+                    contentStyle={{ height: 60, justifyContent: 'center' }}
+                  >
+                    {item === '⌫' ? <Icon name="backspace-outline" size={22} color={darkMode ? "#fff" : "#000"} /> : item}
+                  </Button>
+                ))}
+              </View>
             ))}
           </View>
-        ))}
-      </View>
-    </View>
+        </View>
+      </ScrollView>
+    </PaperProvider>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  display: {
-    flex: 2,
-    backgroundColor: '#222',
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    padding: 20,
-  },
-  input: {
-    fontSize: 30,
-    color: '#fff',
-  },
-  result: {
-    fontSize: 40,
-    color: '#0f0',
-    marginTop: 10,
-  },
-  buttons: {
-    flex: 5,
-    backgroundColor: '#fff',
-    padding: 10,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  button: {
-    flex: 1,
-    backgroundColor: '#ddd',
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: 5,
-    height: 60,
-    borderRadius: 10,
-  },
-  buttonText: {
-    fontSize: 20,
-    color: '#000',
-  },
-});
-
-export default CalculatorScreen;
+}
