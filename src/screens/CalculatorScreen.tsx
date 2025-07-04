@@ -15,12 +15,15 @@ import {
 import Icon from 'react-native-vector-icons/FontAwesome5';
 
 const buttons = [
-  ['C', '(', ')', 'X'],
+  ['C', '(', ')', '⌫'],
   ['7', '8', '9', '÷'],
   ['4', '5', '6', '×'],
   ['1', '2', '3', '−'],
   ['.', '0', '=', '+'],
 ];
+
+// Utility function to check if a value is an operator
+const isOperator = (val: string) => ['+', '−', '×', '÷'].includes(val);
 
 export default function CalculatorScreen() {
   const systemTheme = useColorScheme();
@@ -40,12 +43,33 @@ export default function CalculatorScreen() {
           .replace(/×/g, '*')
           .replace(/÷/g, '/')
           .replace(/−/g, '-');
+        // Prevent eval on empty or invalid expressions
+        if (!sanitized || /[+\-*/.]$/.test(sanitized)) {
+          setResult('Error');
+          return;
+        }
+        // eslint-disable-next-line no-eval
         const evalResult = eval(sanitized);
         setResult(evalResult.toString());
       } catch (e) {
-        setResult('0');
+        setResult('Error');
       }
     } else {
+      // Prevent starting with operator (except minus for negative numbers)
+      if (
+        expression === '' &&
+        (isOperator(val) && val !== '−')
+      ) {
+        return;
+      }
+      // Prevent consecutive operators
+      if (
+        isOperator(val) &&
+        isOperator(expression.slice(-1))
+      ) {
+        setExpression(expression.slice(0, -1) + val);
+        return;
+      }
       setExpression((prev) => prev + val);
     }
   };
